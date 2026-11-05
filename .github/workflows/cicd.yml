@@ -1,0 +1,55 @@
+# .github/workflows/cicd.yml
+name: CI/CD Pipeline
+ 
+# TRIGGER: run this pipeline when code is pushed to main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+ 
+jobs:
+ 
+  # ── JOB 1: Install libraries and run the 3 tests ──────────────
+  test:
+    runs-on: ubuntu-latest    # use a fresh Linux machine
+ 
+    steps:
+ 
+    - name: Checkout code      # step 1: download the repo onto the machine
+      uses: actions/checkout@v4
+ 
+    - name: Set up Python      # step 2: install Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+ 
+    - name: Install dependencies   # step 3: install libraries
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+ 
+    - name: Run tests          # step 4: run the 3 pytest tests
+      run: pytest test_app.py
+ 
+  # ── JOB 2: Deploy to Render (only if Job 1 passed) ────────────
+  deploy:
+    needs: test                # WAIT for test job to finish first
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+ 
+    steps:
+ 
+    - name: Checkout code
+      uses: actions/checkout@v4
+ 
+    - name: Deploy to Render   # tell Render to redeploy the app
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      run: |
+        curl -X POST \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": false}' \
+          https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys
