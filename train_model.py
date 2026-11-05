@@ -1,6 +1,7 @@
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 import joblib
 
 iris = load_iris()
@@ -14,4 +15,5 @@ clf.fit(X_train, y_train)
 print("Accuracy: ", clf.score(X_test, y_test))
 
 joblib.dump(clf, "iris_model.pkl")
-print("Model has saved successfully")
+print("Model has saved successfully.")
+print('*************************************')
